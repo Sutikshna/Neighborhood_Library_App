@@ -3,3 +3,12 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: librarydb
+      POSTGRES_USER: libraryuser
+      POSTGRES_PASSWORD: librarypass
+    ports:
+      - "5432:5432"
