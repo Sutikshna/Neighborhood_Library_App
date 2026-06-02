@@ -1,6 +1,7 @@
-from fastapi import FastAPI
-from app.database import engine
-from app.models import Base
+from fastapi import FastAPI, Depends
+from app.database import engine, get_db
+from app.models import Base, Book
+from sqlalchemy.orm import Session
 
 Base.metadata.create_all(bind=engine)
 
@@ -14,14 +15,24 @@ def home():
     }
     
 @app.get("/books")
-def get_books():
+def get_books(db: Session = Depends(get_db)):
+    books = db.query(Book).all()
+
     return [
         {
-            "id": 1,
-            "title": "Python Basics"
-        },
-        {
-            "id": 2,
-            "title": "FastAPI Guide"
+            "id": book.id,
+            "title": book.title
         }
+        for book in books
     ]
+    
+@app.post("/books")
+def add_book(db: Session = Depends(get_db)):
+    new_book = Book(title="Python Basics")
+
+    db.add(new_book)
+    db.commit()
+
+    return {
+        "message": "Book added successfully"
+    }
