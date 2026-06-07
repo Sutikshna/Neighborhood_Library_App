@@ -6,6 +6,14 @@ export default function Home() {
   const [books, setBooks] = useState([]);
   const [members, setMembers] = useState([]);
   const [borrowings, setBorrowings] = useState([]);
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+
+const [name, setName] = useState("");
+const [contactInfo, setContactInfo] = useState("");
+const [selectedBook, setSelectedBook] = useState("");
+const [selectedMember, setSelectedMember] = useState("");
+const [selectedReturnBook, setSelectedReturnBook] = useState("");
 
   const loadData = () => {
     fetch("http://localhost:8000/books")
@@ -26,49 +34,102 @@ export default function Home() {
   }, []);
 
   const addBook = async () => {
-    await fetch("http://localhost:8000/books", {
-      method: "POST",
-    });
-
-    loadData();
-  };
-
-  const addMember = async () => {
-    await fetch("http://localhost:8000/members", {
-      method: "POST",
-    });
-
-    loadData();
-  };
-
-  const borrowBook = async () => {
   const response = await fetch(
-    "http://localhost:8000/borrow",
+    "http://localhost:8000/books",
     {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        author,
+      }),
     }
   );
 
   const data = await response.json();
 
   alert(data.message);
+  
+  
+  setTitle("");
+  setAuthor("");
+  loadData();
+};
+
+  const addMember = async () => {
+  const response = await fetch(
+    "http://localhost:8000/members",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        contact_info: contactInfo,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  alert(data.message);
+
+  setName("");
+  setContactInfo("");
+
+  loadData();
+};
+
+ const borrowBook = async () => {
+  const response = await fetch(
+    "http://localhost:8000/borrow",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        book_id: Number(selectedBook),
+        member_id: Number(selectedMember),
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  alert(data.message);
+
+  setSelectedBook("");
+  setSelectedMember("");
 
   loadData();
 };
 
 
 
-  const returnBook = async () => {
+  
+const returnBook = async () => {
   const response = await fetch(
     "http://localhost:8000/return",
     {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        book_id: Number(selectedReturnBook),
+      }),
     }
   );
 
   const data = await response.json();
 
   alert(data.message);
+
+  setSelectedReturnBook("");
 
   loadData();
 };
@@ -79,7 +140,98 @@ export default function Home() {
         Neighborhood Library Service
       </h1>
 
-      <div className="flex gap-4 mb-8">
+      <div className="mb-6 space-y-4">
+
+  <div className="flex gap-2">
+    <input
+      type="text"
+      placeholder="Book Title"
+      value={title}
+      onChange={(e) => setTitle(e.target.value)}
+      className="border p-2 rounded"
+    />
+
+    <input
+      type="text"
+      placeholder="Author"
+      value={author}
+      onChange={(e) => setAuthor(e.target.value)}
+      className="border p-2 rounded"
+    />
+  </div>
+
+  <div className="flex gap-2">
+    <input
+      type="text"
+      placeholder="Member Name"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      className="border p-2 rounded"
+    />
+
+    <input
+      type="text"
+      placeholder="Contact Info"
+      value={contactInfo}
+      onChange={(e) => setContactInfo(e.target.value)}
+      className="border p-2 rounded"
+    />
+  </div>
+
+</div>
+
+<div className="flex gap-2 mb-4">
+
+  <select
+    value={selectedBook}
+    onChange={(e) => setSelectedBook(e.target.value)}
+    className="border p-2 rounded"
+  >
+    <option value="">Select Book</option>
+
+    {books.map((book: any) => (
+      <option key={book.id} value={book.id}>
+        #{book.id} - {book.title}
+      </option>
+    ))}
+  </select>
+
+  <select
+    value={selectedMember}
+    onChange={(e) => setSelectedMember(e.target.value)}
+    className="border p-2 rounded"
+  >
+    <option value="">Select Member</option>
+
+    {members.map((member: any) => (
+      <option key={member.id} value={member.id}>
+        #{member.id} - {member.name}
+      </option>
+    ))}
+  </select>
+
+  <select
+    value={selectedReturnBook}
+    onChange={(e) => setSelectedReturnBook(e.target.value)}
+    className="border p-2 rounded"
+  >
+    <option value="">Select Book To Return</option>
+
+    {borrowings
+      .filter((b: any) => !b.returned_at)
+      .map((b: any) => (
+        <option
+          key={b.id}
+          value={b.book_id}
+        >
+          Book #{b.book_id}
+        </option>
+      ))}
+  </select>
+
+</div>
+
+<div className="flex gap-4 mb-8">
         <button
           onClick={addBook}
           className="bg-blue-600 text-white px-4 py-2 rounded"

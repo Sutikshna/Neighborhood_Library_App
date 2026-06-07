@@ -4,6 +4,7 @@ from app.models import Base, Book, Member, Borrowing
 from sqlalchemy.orm import Session
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
+from app.schemas import BookCreate, MemberCreate, BorrowCreate, ReturnCreate
 
 Base.metadata.create_all(bind=engine)
 
@@ -37,10 +38,13 @@ def get_books(db: Session = Depends(get_db)):
     ]
     
 @app.post("/books")
-def add_book(db: Session = Depends(get_db)):
+def add_book(
+    book: BookCreate,
+    db: Session = Depends(get_db)
+):
     new_book = Book(
-    title="Python Basics",
-    author="Unknown"
+        title=book.title,
+        author=book.author
     )
 
     db.add(new_book)
@@ -51,10 +55,13 @@ def add_book(db: Session = Depends(get_db)):
     }
     
 @app.post("/members")
-def add_member(db: Session = Depends(get_db)):
+def add_member(
+    member: MemberCreate,
+    db: Session = Depends(get_db)
+):
     new_member = Member(
-        name="John Doe",
-        contact_info="john@example.com"
+        name=member.name,
+        contact_info=member.contact_info
     )
 
     db.add(new_member)
@@ -79,17 +86,23 @@ def get_members(db: Session = Depends(get_db)):
     
 
 @app.post("/return")
-def return_book(db: Session = Depends(get_db)):
+def return_book(
+    returned: ReturnCreate,
+    db: Session = Depends(get_db)
+):
 
     borrowing = (
         db.query(Borrowing)
-        .filter(Borrowing.returned_at == None)
+        .filter(
+            Borrowing.book_id == returned.book_id,
+            Borrowing.returned_at == None
+        )
         .first()
     )
 
     if not borrowing:
         return {
-            "message": "No active borrowed book found"
+            "message": "No active borrowing found"
         }
 
     borrowing.returned_at = datetime.utcnow()
@@ -97,7 +110,7 @@ def return_book(db: Session = Depends(get_db)):
     db.commit()
 
     return {
-        "message": f"Book {borrowing.book_id} returned successfully"
+        "message": f"Book {returned.book_id} returned successfully"
     }
     
 @app.get("/borrowed-books")
@@ -116,47 +129,50 @@ def get_borrowed_books(db: Session = Depends(get_db)):
     ]
     
 @app.post("/borrow")
-def borrow_book(db: Session = Depends(get_db)):
+def borrow_book(
+    borrow: BorrowCreate,
+    db: Session = Depends(get_db)
+):
 
-    books = db.query(Book).all()
+    book = (
+        db.query(Book)
+        .filter(Book.id == borrow.book_id)
+        .first()
+    )
 
-    member = db.query(Member).first()
+    member = (
+        db.query(Member)
+        .filter(Member.id == borrow.member_id)
+        .first()
+    )
 
-    if not books:
+    if not book:
         return {
-            "message": "No books found"
+            "message": "Book not found"
         }
 
     if not member:
         return {
-            "message": "No member found"
+            "message": "Member not found"
         }
 
-    available_book = None
-
-    for book in books:
-
-        active_borrow = (
-            db.query(Borrowing)
-            .filter(
-                Borrowing.book_id == book.id,
-                Borrowing.returned_at == None
-            )
-            .first()
+    active_borrow = (
+        db.query(Borrowing)
+        .filter(
+            Borrowing.book_id == book.id,
+            Borrowing.returned_at == None
         )
+        .first()
+    )
 
-        if not active_borrow:
-            available_book = book
-            break
-
-    if not available_book:
+    if active_borrow:
         return {
-            "message": "No books available for borrowing"
+            "message": f"Book {book.id} is already borrowed"
         }
 
     new_borrowing = Borrowing(
         member_id=member.id,
-        book_id=available_book.id,
+        book_id=book.id,
         borrowed_at=datetime.utcnow(),
         returned_at=None
     )
@@ -165,7 +181,7 @@ def borrow_book(db: Session = Depends(get_db)):
     db.commit()
 
     return {
-        "message": f"Book {available_book.id} borrowed successfully"
+        "message": f"Book {book.id} borrowed successfully"
     }
 
 @app.put("/books/{book_id}")
