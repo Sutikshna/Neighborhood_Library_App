@@ -4,7 +4,7 @@ from app.models import Base, Book, Member, Borrowing
 from sqlalchemy.orm import Session
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
-from app.schemas import BookCreate, MemberCreate, BorrowCreate, ReturnCreate
+from app.schemas import BookCreate, MemberCreate, BorrowCreate, ReturnCreate, BookUpdate, MemberUpdate
 
 Base.metadata.create_all(bind=engine)
 
@@ -185,7 +185,11 @@ def borrow_book(
     }
 
 @app.put("/books/{book_id}")
-def update_book(book_id: int, db: Session = Depends(get_db)):
+def update_book(
+    book_id: int,
+    book_data: BookUpdate,
+    db: Session = Depends(get_db)
+):
     book = db.query(Book).filter(Book.id == book_id).first()
 
     if not book:
@@ -193,8 +197,8 @@ def update_book(book_id: int, db: Session = Depends(get_db)):
             "message": "Book not found"
         }
 
-    book.title = "Updated Python Book"
-    book.author = "Updated Author"
+    book.title = book_data.title
+    book.author = book_data.author
 
     db.commit()
 
@@ -203,7 +207,11 @@ def update_book(book_id: int, db: Session = Depends(get_db)):
     }
     
 @app.put("/members/{member_id}")
-def update_member(member_id: int, db: Session = Depends(get_db)):
+def update_member(
+    member_id: int,
+    member_data: MemberUpdate,
+    db: Session = Depends(get_db)
+):
     member = db.query(Member).filter(Member.id == member_id).first()
 
     if not member:
@@ -211,11 +219,80 @@ def update_member(member_id: int, db: Session = Depends(get_db)):
             "message": "Member not found"
         }
 
-    member.name = "Updated John Doe"
-    member.contact_info = "updated@example.com"
+    member.name = member_data.name
+    member.contact_info = member_data.contact_info
 
     db.commit()
 
     return {
         "message": "Member updated successfully"
+    }
+    
+@app.delete("/books/{book_id}")
+def delete_book(
+    book_id: int,
+    db: Session = Depends(get_db)
+):
+    book = (
+        db.query(Book)
+        .filter(Book.id == book_id)
+        .first()
+    )
+
+    if not book:
+        return {
+            "message": "Book not found"
+        }
+
+    borrowing_history = (
+        db.query(Borrowing)
+        .filter(Borrowing.book_id == book_id)
+        .first()
+    )
+
+    if borrowing_history:
+        return {
+            "message": "Cannot delete book with borrowing history"
+        }
+
+    db.delete(book)
+    db.commit()
+
+    return {
+        "message": "Book deleted successfully"
+    }
+    
+    
+@app.delete("/members/{member_id}")
+def delete_member(
+    member_id: int,
+    db: Session = Depends(get_db)
+):
+    member = (
+        db.query(Member)
+        .filter(Member.id == member_id)
+        .first()
+    )
+
+    if not member:
+        return {
+            "message": "Member not found"
+        }
+
+    borrowing_history = (
+        db.query(Borrowing)
+        .filter(Borrowing.member_id == member_id)
+        .first()
+    )
+
+    if borrowing_history:
+        return {
+            "message": "Cannot delete member with borrowing history"
+        }
+
+    db.delete(member)
+    db.commit()
+
+    return {
+        "message": "Member deleted successfully"
     }

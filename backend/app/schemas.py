@@ -19,3 +19,11 @@ class ReturnCreate(BaseModel):
     book_id: int
     
  
+class BookUpdate(BaseModel):
+    title: str
+    author: str
+
+
+class MemberUpdate(BaseModel):
+    name: str
+    contact_info: str
