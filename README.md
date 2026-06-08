@@ -35,6 +35,28 @@ The application provides functionality to:
 
 ---
 
+## Application Flow
+
+```text
+User
+ │
+ ▼
+Next.js Frontend
+ │
+ ▼
+FastAPI Backend
+ │
+ ▼
+Pydantic Validation
+ │
+ ▼
+SQLAlchemy ORM
+ │
+ ▼
+PostgreSQL Database
+```
+
+
 ## Architecture
 
 ```text
@@ -212,6 +234,21 @@ http://localhost:3000
 * Borrow status tracking
 * CORS configuration
 * Interactive frontend controls
+
+---
+
+## Key Concepts Demonstrated
+
+* REST API Development using FastAPI
+* Dependency Injection using FastAPI Depends
+* Request Validation using Pydantic
+* Database Modeling using SQLAlchemy
+* PostgreSQL Integration
+* Dockerized Application Deployment
+* Frontend Integration with React and Next.js
+* Business Logic Validation
+* CRUD Operations
+* Client-Server Communication using Fetch API
 
 ---
 
